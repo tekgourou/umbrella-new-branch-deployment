@@ -1,15 +1,14 @@
+from oauthlib.oauth2 import BackendApplicationClient
+from requests_oauthlib import OAuth2Session
+from requests.auth import HTTPBasicAuth
 import requests
 import json
 import xlrd
 
-# Umbrella API key
-management_client_id = "----YOUR MANAGEMENT CLIENT ID HERE----"
-management_client_secret = "----YOUR MANAGEMENT CLIENT SECRET HERE----"
-network_devices_client_id = "----YOUR NETWORK DEVICE CLIENT ID HERE----"
-network_devices_client_secret = "----YOUR NETWORK DEVICE CLIENT SECRET HERE----"
-
-# Umbrella Org ID
-umbrella_orgid = '----YOUR UMBRELLA ORG ID HERE----'
+# Export/Set the environment variables
+client_id = "---YOUR UMBRELLA CLIENT ID HERE---"
+client_secret = "---YOUR UMBRELLA API secrect HERE---"
+token_url = 'https://api.umbrella.com/auth/v2/token'
 
 # Open the Workbook
 workbook = xlrd.open_workbook('branch.xls')
@@ -43,12 +42,28 @@ headers = {
     "Accept": "application/json"
 }
 
+class UmbrellaAPI:
+    def __init__(self, url, ident, secret):
+        self.url = url
+        self.ident = ident
+        self.secret = secret
+        self.token = None
+
+    def GetToken(self):
+        auth = HTTPBasicAuth(self.ident, self.secret)
+        client = BackendApplicationClient(client_id=self.ident)
+        oauth = OAuth2Session(client=client)
+        self.token = oauth.fetch_token(token_url=self.url, auth=auth)
+        return self.token
+
+
 # Add new site
-def add_site(site_name):
-    url = "https://management.api.umbrella.com/v1/organizations/{}/sites".format(umbrella_orgid)
+def add_site(token, site_name):
+    url = "https://api.umbrella.com/deployments/v2/sites"
     payload = {}
     payload['name'] = site_name
-    response = requests.request('GET', url, headers=headers, auth= (management_client_id, management_client_secret))
+    headers['Authorization'] = 'Bearer '+token
+    response = requests.request('GET', url, headers=headers)
     if response.status_code == 200:
         if '"name":"{}"'.format(site_name) in response.text :
             for site in json.loads(response.text):
@@ -56,7 +71,7 @@ def add_site(site_name):
                     siteId = site['siteId']
                     #print ('Site - {} - already exists; siteId = {}'.format(site_name, siteId))
         else:
-            response = requests.request('POST', url, headers=headers, json = payload, auth= (management_client_id, management_client_secret))
+            response = requests.request('POST', url, headers=headers, json=payload)
             if response.status_code == 200:
                 siteId = json.loads(response.text)['siteId']
                     #print ('New site - {} - was created with siteId :{}'.format(site_name, siteId))
@@ -71,14 +86,15 @@ def add_site(site_name):
     return siteId
 
 # Add new internal network
-def add_internal_network(network_name, ipAddress, prefixLength, siteId):
-    url = "https://management.api.umbrella.com/v1/organizations/{}/internalnetworks".format(umbrella_orgid)
+def add_internal_network(token, network_name, ipAddress, prefixLength, siteId):
+    url = "https://api.umbrella.com/deployments/v2/internalnetworks"
     payload = {}
     payload['name'] = network_name
     payload['ipAddress'] = ipAddress
     payload['prefixLength'] = prefixLength
     payload['siteId'] = siteId
-    response = requests.request('GET', url, headers=headers, auth=(management_client_id, management_client_secret))
+    headers['Authorization'] = 'Bearer '+token
+    response = requests.request('GET', url, headers=headers)
     if response.status_code == 200:
         if '"name":"{}"'.format(network_name) in response.text :
             for network in json.loads(response.text):
@@ -86,7 +102,7 @@ def add_internal_network(network_name, ipAddress, prefixLength, siteId):
                     originId = network['originId']
                     #print ('Internal Network - {} - already exists; originId = {}'.format(network_name, originId))
         else:
-            response = requests.request('POST', url, headers=headers, json = payload, auth= (management_client_id, management_client_secret))
+            response = requests.request('POST', url, headers=headers, json = payload)
             if response.status_code == 200:
                 originId = json.loads(response.text)['originId']
                 #print ('New Internal Network - {} - was created with originId :{}'.format(network_name, originId))
@@ -101,10 +117,12 @@ def add_internal_network(network_name, ipAddress, prefixLength, siteId):
     return originId
 
 # Add identity to policy
-def add_identity_to_policy(originId, policy_name):
-    url = "https://management.api.umbrella.com/v1/organizations/{}/policies".format(umbrella_orgid)
+def add_identity_to_policy(token, originId, policy_name):
+    #url = "https://management.api.umbrella.com/v1/organizations/{}/policies".format(umbrella_orgid)
+    url = "https://api.umbrella.com/deployments/v2/policies"
     payload = None
-    response = requests.request('GET', url, headers=headers, data=payload,auth=(network_devices_client_id, network_devices_client_secret))
+    headers['Authorization'] = 'Bearer '+token
+    response = requests.request('GET', url, headers=headers, data=payload)
     if response.status_code == 200:
         if '"name":"{}"'.format(policy_name) in response.text:
             for policy in json.loads(response.text):
@@ -117,16 +135,16 @@ def add_identity_to_policy(originId, policy_name):
     else:
         print('Error - Not able to get policy list from Umbrella API')
         exit()
-    url = "https://management.api.umbrella.com/v1/organizations/{}/policies/{}/identities/{}".format(umbrella_orgid,policyId,originId)
+    url = "https://api.umbrella.com/deployments/v2/policies/{}/identities/{}".format(policyId, originId)
     #time.sleep(15)
-    response = requests.request('PUT', url, headers=headers, data=payload,auth=(network_devices_client_id, network_devices_client_secret))
+    response = requests.request('PUT', url, headers=headers, data=payload)
     return response.status_code
 
 # Main def to add new store
-def add_store(site_name, network_name, ipAddress, prefixLength, policy_name):
-    siteId = add_site(site_name)
-    originId = add_internal_network(network_name, ipAddress, prefixLength, siteId)
-    response = add_identity_to_policy(originId, policy_name)
+def add_store(token, site_name, network_name, ipAddress, prefixLength, policy_name):
+    siteId = add_site(token, site_name)
+    originId = add_internal_network(token, network_name, ipAddress, prefixLength, siteId)
+    response = add_identity_to_policy(token, originId, policy_name)
     if response == 200:
         message = 'Identity {} was added to {} policy'.format(network_name,policy_name)
     else:
@@ -134,11 +152,13 @@ def add_store(site_name, network_name, ipAddress, prefixLength, policy_name):
     return message
 
 if __name__ == '__main__':
+    api = UmbrellaAPI(token_url, client_id, client_secret)
+    token = api.GetToken()["access_token"]
     for row in data:
         site_name = row['site_name']
         policy_name = row['policy_name']
         network_name = row['network_name']
         ipAddress = row['ipAddress']
         prefixLength = row['prefixLength']
-        message = add_store(site_name, network_name, ipAddress, prefixLength, policy_name)
+        message = add_store(token, site_name, network_name, ipAddress, prefixLength, policy_name)
         print (message)
