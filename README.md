@@ -4,10 +4,10 @@ Use cases :
 
 
 
-## Create Cisco Umbrella API key
+## Create a Cisco Umbrella API key
 
 ![](umbrella_create_api.png)
 
-## Create Excel sheet from template
+## Create a Excel sheet from template
 
 ![](excel_template.png)
