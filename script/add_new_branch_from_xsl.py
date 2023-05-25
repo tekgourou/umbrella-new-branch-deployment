@@ -5,7 +5,7 @@ import requests
 import json
 import xlrd
 
-# Export/Set the environment variables
+# Export/Set API key
 client_id = "---YOUR UMBRELLA CLIENT ID HERE---"
 client_secret = "---YOUR UMBRELLA API secrect HERE---"
 
