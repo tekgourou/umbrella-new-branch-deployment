@@ -8,6 +8,10 @@ This Python script automates the creation of new sites and identities. It reads 
 
 ![](img/umbrella_create_api.png)
 
+Modify this section of the script with your new api key
+
+![](img/modify_api_key.png)
+
 ## Create a Excel sheet from this template
 
 ![](img/excel_template.png)
