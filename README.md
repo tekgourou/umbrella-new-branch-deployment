@@ -1,4 +1,4 @@
-# Cisco Umbrella DNS new branch orchestration deployment
+# Cisco Umbrella DNS new branch deployment orchestration
 
 Use cases :
 
