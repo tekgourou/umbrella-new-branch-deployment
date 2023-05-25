@@ -8,7 +8,6 @@ import xlrd
 # Export/Set the environment variables
 client_id = "---YOUR UMBRELLA CLIENT ID HERE---"
 client_secret = "---YOUR UMBRELLA API secrect HERE---"
-token_url = 'https://api.umbrella.com/auth/v2/token'
 
 # Open the Workbook
 workbook = xlrd.open_workbook('branch.xls')
@@ -152,6 +151,7 @@ def add_store(token, site_name, network_name, ipAddress, prefixLength, policy_na
     return message
 
 if __name__ == '__main__':
+    token_url = 'https://api.umbrella.com/auth/v2/token'
     api = UmbrellaAPI(token_url, client_id, client_secret)
     token = api.GetToken()["access_token"]
     for row in data:
