@@ -8,6 +8,6 @@ Use cases :
 
 ![](umbrella_create_api.png)
 
-## Create a Excel sheet from template
+## Create a Excel sheet from this template
 
 ![](excel_template.png)
