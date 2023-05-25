@@ -6,8 +6,8 @@ Use cases :
 
 ## Create a Cisco Umbrella API key
 
-![](umbrella_create_api.png)
+![](img/umbrella_create_api.png)
 
 ## Create a Excel sheet from this template
 
-![](excel_template.png)
+![](img/excel_template.png)
